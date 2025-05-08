@@ -21,7 +21,10 @@ if TYPE_CHECKING:
 unpatched_conform = (
     singer_sdk.helpers._typing._conform_primitive_property  # noqa: SLF001
 )
-
+DEFAULT_SESSION_SQLS = ['SET @@session.time_zone="+0:00"',
+                        'SET @@session.wait_timeout=28800',
+                        'SET @@session.net_read_timeout=3600',
+                        'SET @@session.innodb_lock_wait_timeout=3600']
 
 def patched_conform(
     elem: Any,  # noqa: ANN401
@@ -82,6 +85,9 @@ class MySQLConnector(SQLConnector):
             self.logger.info(
                 "Instance is not a Vitess instance, using standard configuration."
             )
+        with self._connect() as conn:
+            for sql in DEFAULT_SESSION_SQLS:
+                conn.execute(sql)
 
     @staticmethod
     def to_jsonschema_type(
